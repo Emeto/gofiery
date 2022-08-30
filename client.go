@@ -49,13 +49,13 @@ func NewFieryClient(addr string, version int, prefix string, user string, pass s
 
 func (fc *FieryClient) postflight(res *http.Response, do func()) {
 	if !fc.ResponseIsJSON(res) {
-		fmt.Fprintf(os.Stderr, "gofiery: HTTP error: login endpoint return %v but expected %v\n", res.Header.Get("Content-Type"), "application/json")
+		fmt.Fprintf(os.Stderr, "gofiery: HTTP error: endpoint returned %v but expected %v\n", res.Header.Get("Content-Type"), "application/json")
 		os.Exit(0)
 	}
 	if fc.ResponseIsOK(res) {
 		do()
 	} else {
-		fmt.Fprintf(os.Stderr, "gofiery: HTTP error: login endpoint return status code %v but expected %v\n", res.StatusCode, http.StatusOK)
+		fmt.Fprintf(os.Stderr, "gofiery: HTTP error: endpoint returned status code %v but expected %v\n", res.StatusCode, http.StatusOK)
 		os.Exit(0)
 	}
 }

@@ -24,10 +24,20 @@ type FieryClient struct {
 	HTTPClient     http.Client
 }
 
-type AuthPayload struct {
+type authPayload struct {
 	username string
 	password string
 	apikey   string
+}
+
+type response struct {
+	time time.Time
+	data responseData[any]
+}
+
+type responseData[T any] struct {
+	kind string
+	item T
 }
 
 // NewFieryClient creates a new client to communicate with a Fiery API server.
@@ -83,7 +93,7 @@ func (fc *FieryClient) ResponseIsJSON(res *http.Response) bool {
 // If the login is successful, the session cookie is then stored in fc
 // for use in authentication-required endpoints.
 func (fc *FieryClient) Login() {
-	payload, err := json.Marshal(AuthPayload{username: fc.Username, password: fc.Password, apikey: fc.Key})
+	payload, err := json.Marshal(authPayload{username: fc.Username, password: fc.Password, apikey: fc.Key})
 	if err != nil {
 		fmt.Fprint(os.Stderr, "gofiery: unable to marshal json authentication payload")
 		panic(err)
@@ -116,7 +126,8 @@ func (fc *FieryClient) Logout() {
 }
 
 // Run do the request to a Fiery API endpoint and place the result in a reference of resultContainer
-func (fc *FieryClient) Run(endpoint string, method string, resultContainer any) {
+func (fc *FieryClient) Run(endpoint string, method string) *response {
+	var data response
 	r := bytes.NewReader([]byte{})
 	if fc.Cookie == "" {
 		fmt.Fprint(os.Stderr, "gofiery: missing cookie in client. did you login?")
@@ -138,9 +149,10 @@ func (fc *FieryClient) Run(endpoint string, method string, resultContainer any) 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "gofiery: error reading HTTP response: %s\n", err)
 		}
-		err = json.Unmarshal(body, &resultContainer)
+		err = json.Unmarshal(body, &data)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "gofiery: could not parse JSON response: %s\n", err)
 		}
 	})
+	return &data
 }

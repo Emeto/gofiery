@@ -6,16 +6,6 @@ import (
 )
 
 type Version struct {
-	Time time.Time   `json:"time"`
-	Data VersionData `json:"data"`
-}
-
-type VersionData struct {
-	Kind string
-	Item VersionItem
-}
-
-type VersionItem struct {
 	Apache   ApacheVersion
 	FieryAPI FieryAPIVersion `json:"fieryApi"`
 	Gems     []interface{}
@@ -48,22 +38,29 @@ type RubyVersion struct {
 	Version string
 }
 
-type SpecVersion interface {
-	ApacheVersion
-	FieryAPIVersion
-	OpenSSLVersion
-	RhythmVersion
-	RubyVersion
-}
-
 func GetVersions(fc *FieryClient) *Version {
 	var versions Version
-	fc.Run(fc.Endpoint("versions"), http.MethodGet, &versions)
+	response := fc.Run(fc.Endpoint("versions"), http.MethodGet)
+	versions = response.data.item.(Version)
 	return &versions
 }
 
-func GetVersion[V SpecVersion](of string, fc *FieryClient) *V {
-	var version V
-	fc.Run(fc.Endpoint("versions?package="+of), http.MethodGet, &version)
+func GetVersion(of string, fc *FieryClient) any {
+	var version any
+	versions := GetVersions(fc)
+	switch of {
+	case "apache":
+		version = versions.Apache
+	case "fieryApi":
+		version = versions.FieryAPI
+	case "gems":
+		version = versions.Gems
+	case "openSsl":
+		version = versions.OpenSSL
+	case "rhythm":
+		version = versions.Rhythm
+	case "ruby":
+		version = versions.Ruby
+	}
 	return &version
 }

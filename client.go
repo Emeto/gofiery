@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -30,7 +29,7 @@ type authPayload struct {
 	apikey   string
 }
 
-type response struct {
+type Response struct {
 	time time.Time
 	data responseData[any]
 }
@@ -59,13 +58,19 @@ func NewFieryClient(addr string, version int, prefix string, user string, pass s
 
 func (fc *FieryClient) postflight(res *http.Response, do func()) {
 	if !fc.ResponseIsJSON(res) {
-		fmt.Fprintf(os.Stderr, "gofiery: HTTP error: endpoint returned %v but expected %v\n", res.Header.Get("Content-Type"), "application/json")
+		_, err := fmt.Fprintf(os.Stderr, "gofiery: HTTP error: endpoint returned %v but expected %v\n", res.Header.Get("Content-Type"), "application/json")
+		if err != nil {
+			return
+		}
 		os.Exit(0)
 	}
 	if fc.ResponseIsOK(res) {
 		do()
 	} else {
-		fmt.Fprintf(os.Stderr, "gofiery: HTTP error: endpoint returned status code %v but expected %v\n", res.StatusCode, http.StatusOK)
+		_, err := fmt.Fprintf(os.Stderr, "gofiery: HTTP error: endpoint returned status code %v but expected %v\n", res.StatusCode, http.StatusOK)
+		if err != nil {
+			return
+		}
 		os.Exit(0)
 	}
 }
@@ -76,7 +81,7 @@ func (fc *FieryClient) Endpoint(uri string) string {
 	return fc.ServerAddr.String() + fc.EndpointPrefix + uri
 }
 
-// ResponseIsOK checks that an HTTP response res returned a 200 status code.
+// ResponseIsOK checks that an HTTP response returned a 200 status code.
 // Returns false otherwise.
 func (fc *FieryClient) ResponseIsOK(res *http.Response) bool {
 	return res.StatusCode == http.StatusOK
@@ -95,7 +100,10 @@ func (fc *FieryClient) ResponseIsJSON(res *http.Response) bool {
 func (fc *FieryClient) Login() {
 	payload, err := json.Marshal(authPayload{username: fc.Username, password: fc.Password, apikey: fc.Key})
 	if err != nil {
-		fmt.Fprint(os.Stderr, "gofiery: unable to marshal json authentication payload")
+		_, err := fmt.Fprint(os.Stderr, "gofiery: unable to marshal json authentication payload")
+		if err != nil {
+			return
+		}
 		panic(err)
 	}
 	r := bytes.NewReader(payload)
@@ -103,7 +111,10 @@ func (fc *FieryClient) Login() {
 	req.Header.Set("Content-Type", "application/json")
 	res, err := fc.HTTPClient.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "gofiery: error making http request: %s\n", err)
+		_, err := fmt.Fprintf(os.Stderr, "gofiery: error making http request: %s\n", err)
+		if err != nil {
+			return
+		}
 	}
 	fc.postflight(res, func() { fc.Cookie = res.Header.Get("Set-Cookie") })
 }
@@ -113,30 +124,42 @@ func (fc *FieryClient) Login() {
 // the login process is removed from the client.
 func (fc *FieryClient) Logout() {
 	if fc.Cookie == "" {
-		fmt.Fprint(os.Stderr, "gofiery: missing cookie in client. did you login?")
+		_, err := fmt.Fprint(os.Stderr, "gofiery: missing cookie in client. did you login?")
+		if err != nil {
+			return
+		}
 	}
 	r := bytes.NewReader([]byte{})
 	req, _ := http.NewRequest(http.MethodPost, fc.Endpoint("logout"), r)
 	req.Header.Set("Cookie", fc.Cookie)
 	res, err := fc.HTTPClient.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "gofiery: error making http request: %s\n", err)
+		_, err := fmt.Fprintf(os.Stderr, "gofiery: error making http request: %s\n", err)
+		if err != nil {
+			return
+		}
 	}
 	fc.postflight(res, func() { fc.Cookie = "" })
 }
 
-// Run do the request to a Fiery API endpoint and place the result in a reference of resultContainer
-func (fc *FieryClient) Run(endpoint string, method string) *response {
-	var data response
+// Run the request to a Fiery API endpoint and place the result in a reference of resultContainer
+func (fc *FieryClient) Run(endpoint string, method string) *Response {
+	var data Response
 	r := bytes.NewReader([]byte{})
 	if fc.Cookie == "" {
-		fmt.Fprint(os.Stderr, "gofiery: missing cookie in client. did you login?")
+		_, err := fmt.Fprint(os.Stderr, "gofiery: missing cookie in client. did you login?")
+		if err != nil {
+			return nil
+		}
 	}
 	req, _ := http.NewRequest(method, fc.Endpoint(endpoint), r)
 	req.Header.Set("Cookie", fc.Cookie)
 	res, err := fc.HTTPClient.Do(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "gofiery: error making http request: %s\n", err)
+		_, err := fmt.Fprintf(os.Stderr, "gofiery: error making http request: %s\n", err)
+		if err != nil {
+			return nil
+		}
 	}
 	fc.postflight(res, func() {
 		defer func(Body io.ReadCloser) {
@@ -145,13 +168,19 @@ func (fc *FieryClient) Run(endpoint string, method string) *response {
 				log.Fatal("gofiery: unable to close response body")
 			}
 		}(res.Body)
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "gofiery: error reading HTTP response: %s\n", err)
+			_, err := fmt.Fprintf(os.Stderr, "gofiery: error reading http response: %s\n", err)
+			if err != nil {
+				return
+			}
 		}
 		err = json.Unmarshal(body, &data)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "gofiery: could not parse JSON response: %s\n", err)
+			_, err := fmt.Fprintf(os.Stderr, "gofiery: could not parse json response: %s\n", err)
+			if err != nil {
+				return
+			}
 		}
 	})
 	return &data

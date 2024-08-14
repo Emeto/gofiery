@@ -1,3 +1,3 @@
-module gofiery
+module github.com/Emeto/gofiery
 
-go 1.18
+go 1.22

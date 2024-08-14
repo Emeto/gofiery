@@ -24,7 +24,7 @@ type Info struct {
 	AppId           string    `json:"app_id"`
 }
 
-func GetInfo(fc *FieryClient) *Info {
+func (fc *FieryClient) GetInfo() *Info {
 	var info Info
 	response := fc.Run(fc.Endpoint("info"), http.MethodGet)
 	info = response.data.item.(Info)

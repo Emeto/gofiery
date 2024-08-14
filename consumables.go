@@ -34,7 +34,7 @@ type trayAttributes struct {
 
 // GetConsumables reports information about the supply of paper,
 // tray and toner on the print engine
-func GetConsumables(fc *FieryClient) *Consumables {
+func (fc *FieryClient) GetConsumables() *Consumables {
 	var consumables Consumables
 	response := fc.Run(fc.Endpoint("consumables"), http.MethodGet)
 	consumables = response.data.item.(Consumables)

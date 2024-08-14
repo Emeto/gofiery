@@ -38,16 +38,16 @@ type RubyVersion struct {
 	Version string
 }
 
-func GetVersions(fc *FieryClient) *Version {
+func (fc *FieryClient) GetVersions() *Version {
 	var versions Version
 	response := fc.Run(fc.Endpoint("versions"), http.MethodGet)
 	versions = response.data.item.(Version)
 	return &versions
 }
 
-func GetVersion(of string, fc *FieryClient) any {
+func (fc *FieryClient) GetVersion(of string) any {
 	var version any
-	versions := GetVersions(fc)
+	versions := fc.GetVersions()
 	switch of {
 	case "apache":
 		version = versions.Apache

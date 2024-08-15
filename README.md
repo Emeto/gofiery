@@ -1,5 +1,7 @@
 ![GoFiery logo](https://github.com/Emeto/gofiery/blob/main/docs/gofiery.png?raw=true)
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/Emeto/gofiery.svg)](https://pkg.go.dev/github.com/Emeto/gofiery)
+
 # GoFiery
 
 GoFiery is a pure go implementation of the Fiery API. It provides a client and easy access to all the API endpoints to help you write your own application.

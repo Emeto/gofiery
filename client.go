@@ -30,13 +30,15 @@ type authPayload struct {
 }
 
 type Response struct {
-	time time.Time
-	data responseData[any]
+	time       time.Time
+	totalItems int
+	data       responseData[any]
 }
 
 type responseData[T any] struct {
-	kind string
-	item T
+	kind  string
+	item  T
+	items []T
 }
 
 // NewFieryClient creates a new client to communicate with a Fiery API server.
@@ -62,7 +64,7 @@ func (fc *FieryClient) postflight(res *http.Response, do func()) {
 		if err != nil {
 			return
 		}
-		os.Exit(0)
+		os.Exit(1)
 	}
 	if fc.ResponseIsOK(res) {
 		do()
@@ -71,7 +73,7 @@ func (fc *FieryClient) postflight(res *http.Response, do func()) {
 		if err != nil {
 			return
 		}
-		os.Exit(0)
+		os.Exit(2)
 	}
 }
 

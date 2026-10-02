@@ -24,6 +24,8 @@ type Info struct {
 	AppId           string    `json:"app_id"`
 }
 
+// GetInfo returns Fiery's basic info such as name, version, disk space available,
+// etc.
 func (fc *FieryClient) GetInfo() *Info {
 	var info Info
 	response := fc.Run(fc.Endpoint("info"), http.MethodGet)
